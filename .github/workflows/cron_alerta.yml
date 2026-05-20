@@ -1,0 +1,39 @@
+name: Run Cyber Alerts Cron
+
+on:
+  schedule:
+    # Se ejecuta cada hora (puedes cambiarlo usando formato Cron)
+    - cron: '0 * * * *'
+  workflow_dispatch: # Permite que puedas ejecutarlo manualmente desde la web de GitHub
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Descargar el código del repositorio
+      uses: actions/checkout@v4
+
+    - name: Configurar entorno de Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Instalar librerías necesarias
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Ejecutar Script de Alertas
+      env:
+        # Aquí mapeamos los secretos guardados en GitHub hacia el script
+        NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: python cyber_alerts.py
+
+    - name: Guardar historial de noticias enviadas para evitar duplicados
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "Bot: Actualizar historial de noticias enviadas"
+        file_pattern: 'enviadas.txt'
